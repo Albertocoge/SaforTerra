@@ -1,5 +1,5 @@
 # SaforTerra
-Marketplace Full Stack para la digitalización de la cadena de suministro agroalimentaria. Desarrollado con Node.js, Express y MySQL(Sequelize). Incluye gestión de catálogo, pasarela de pago Stripe e integración con 
+Marketplace Full Stack para la digitalización de la cadena de suministro agroalimentaria. Desarrollado con Node.js, Express y MySQL(Sequelize). Incluye gestión de catálogo, pasarela de pago Stripe e integración con Cloudinary.
 
 Backend: Node.js + Express + Sequelize ORM.
 
