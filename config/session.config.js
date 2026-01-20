@@ -1,34 +1,45 @@
-const User = require("../models/User.model");
 const expressSession = require("express-session");
-const MongoStore = require("connect-mongo");
-const mongoose = require("mongoose");
-const MAX_AGE = 7;
+const SequelizeStore = require("connect-session-sequelize")(expressSession.Store);
+
+const sequelize = require("./db.config");
+const User = require("../models/User.model");
+const MAX_AGE_DAYS = 7;
+
+//Store de sesiones en MySQL
+const sessionStore = new SequelizeStore({
+  db: sequelize,
+});
+
+//Crea la tabla Sessions si no existe
+sessionStore.sync();
+
 module.exports.sessionConfig = expressSession({
-  name: "express-cookie",
-  secret: process.env.COOKIE_SECRET || "super-secret", // esto lo guardamos en el dot.env COOKIE_SECRET
+  name: "saforterra.sid",
+  secret: process.env.SESSION_SECRET || "super-secret", // esto lo guardamos en el dot.env COOKIE_SECRET
   resave: false,
   saveUninitialized: false,
   cookie: {
     secure: process.env.COOKIE_SECURE === 'true' ? true : false, // mandamos la cookie en protocolos HTTP/HTTPS si es true solo HTTPS
     httpOnly: true, // no es accesible por el Javascript del client-browser
-    maxAge: 24 * 3600 * 1000 * MAX_AGE, // una semana de vida
+    maxAge: 24 * 3600 * 1000 * MAX_AGE_DAYS, // una semana de vida
   },
-  store: new MongoStore({
-    mongoUrl: mongoose.connection._connectionString, //monngoose.connection.db
-    ttl: 24 * 3600 * MAX_AGE,
-  }),
+  store: sessionStore,
 });
-// Middleware para obtener el usuario en sesión a partir de la cookie que está en el navegador
-module.exports.getCurrentUser = (req, res, next) => {
-  const userId = req.session.userId
+// Middleware: cargar usuario actual desde la sesión
+module.exports.getCurrentUser = async(req, res, next) => {
+ try {
+  const userId = req.session.userId;
   if (!userId) {
-    return next()
+    return next();
+  const user = await User.findByPk(userId);
+  req.currentUser = user;
+  res.locals.currentUser = user;
+
+
+
+  return next();
+  } catch (error) {
+    next(error);
   }
-  User.findById(userId)
-    .then(user => {
-      req.currentUser = user
-      res.locals.currentUser = user
-      next()
-    })
-    .catch(error => next(error))
+};
 }
