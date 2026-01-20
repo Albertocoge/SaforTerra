@@ -1,0 +1,158 @@
+<h1>Create Your New Listing</h1>
+<form action="/products/new" method="post" enctype="multipart/form-data">
+  <div class="row">
+    <!-- Title -->
+    <div class="mb-3 col-12 col-md-6">
+      <label for="title" class="form-label">Listing Title</label>
+      <input
+        type="text"
+        class="form-control {{#if errors.name}}is-invalid{{/if}}"
+        id="title"
+        name="name"
+        value="{{values.name}}"
+        required
+      >
+      <div class="invalid-feedback">{{errors.name}}</div>
+    </div>
+    <!-- Price -->
+    <div class="mb-3 col-12 col-md-6">
+      <label for="price" class="form-label">Price (€)</label>
+      <input
+        type="number"
+        min="1"
+        step="0.01"
+        class="form-control {{#if errors.price}}is-invalid{{/if}}"
+        id="price"
+        name="price"
+        value="{{values.price}}"
+        required
+      >
+      <div class="invalid-feedback">{{errors.price}}</div>
+    </div>
+    <!-- Category -->
+    <div class="mb-3 col-12 col-md-6">
+      <label for="category" class="form-label">Category</label>
+      <select
+        class="form-select {{#if errors.category}}is-invalid{{/if}}"
+        id="category"
+        name="category"
+        onchange="updateSubcategories()"
+        required
+      >
+        <option disabled selected>Select a category</option>
+        {{categories}}
+        {{#each categories as |categoryObj|}}
+          <option value="{{categoryObj.category}}" data-subcategories="{{categoryObj.subcategories}}">{{categoryObj.category}}</option>
+        {{/each}}
+      </select>
+      <div class="invalid-feedback">{{errors.category}}</div>
+    </div>
+    <!-- Subcategories -->
+    <div class="mb-3 col-12 col-md-6">
+      <label for="subcategories" class="form-label">Subcategory</label>
+      <select
+        class="form-select {{#if errors.subcategories}}is-invalid{{/if}}"
+        id="subcategories"
+        name="subcategories"
+        disabled
+      >
+        <option disabled selected>Select a category first</option>
+      </select>
+      <div class="invalid-feedback">{{errors.subcategories}}</div>
+    </div>
+    <!-- Unit -->
+    <div class="mb-3 col-12 col-md-6">
+      <label for="unit" class="form-label">Unit</label>
+      <select
+        class="form-select {{#if errors.unit}}is-invalid{{/if}}"
+        id="unit"
+        name="unit"
+        required
+      >
+        <option disabled selected>Select a unit</option>
+        <option value="Kilograms">Kilograms</option>
+        <option value="Liters">Liters</option>
+        <option value="Units">Units</option>
+        <option value="Others">Others</option>
+      </select>
+      <div class="invalid-feedback">{{errors.unit}}</div>
+    </div>
+    <!-- Description -->
+    <div class="mb-3 col-12">
+      <label for="description" class="form-label">Description</label>
+      <textarea
+        rows="6"
+        class="form-control {{#if errors.description}}is-invalid{{/if}}"
+        id="description"
+        name="description"
+      >{{values.description}}</textarea>
+      <div class="invalid-feedback">{{errors.description}}</div>
+    </div>
+    <!-- Images -->
+    <div class="mb-3 col-12">
+      <label for="images" class="form-label">Images</label>
+      <input
+        class="form-control {{#if errors.images}}is-invalid{{/if}}"
+        type="file"
+        id="images"
+        name="images"
+        multiple
+        onchange="validateFileCount(this)"
+        required
+      >
+      <div class="invalid-feedback">{{errors.images}}</div>
+    </div>
+  </div>
+  <button class="btn btn-primary">Create Listing</button>
+</form>
+<script>
+  // Función para actualizar las subcategorías
+  function updateSubcategories() {
+    const categorySelect = document.getElementById('category');
+    const subcategorySelect = document.getElementById('subcategories');
+    const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+
+    subcategorySelect.disabled = false;
+    subcategorySelect.innerHTML = '<option disabled selected>Select a subcategory</option>';
+
+    const subcategories = selectedOption.getAttribute('data-subcategories');
+    if (subcategories) {
+      const subcategoriesArray = subcategories.split(',');
+      subcategoriesArray.forEach((subcategory) => {
+        const option = document.createElement('option');
+        option.value = subcategory.trim();
+        option.textContent = subcategory.trim();
+        subcategorySelect.appendChild(option);
+      });
+    }
+  }
+
+  // Validar el número máximo de archivos seleccionados
+  function validateFileCount(input) {
+    const maxFiles = 2; // Límite de 2 imágenes
+    if (input.files.length > maxFiles) {
+      alert(`You can upload up to ${maxFiles} images only.`);
+      input.value = ''; // Limpiar la entrada si se excede el límite
+    }
+  }
+
+  // Validar formulario al enviar
+  document.querySelector('form').addEventListener('submit', function (event) {
+    const descriptionInput = document.getElementById('description');
+    const imagesInput = document.getElementById('images');
+
+    // Validar si la descripción está vacía
+    if (descriptionInput.value.trim() === '') {
+      alert('Please provide a description for the product.');
+      event.preventDefault(); // Evitar envío del formulario
+      return;
+    }
+
+    // Validar si hay más de 2 archivos seleccionados
+    if (imagesInput.files.length > 2) {
+      alert('You can upload up to 2 images only.');
+      event.preventDefault(); // Evitar envío del formulario
+      return;
+    }
+  });
+</script>

@@ -1,0 +1,16 @@
+<h1>Checkout</h1>
+<ul>
+  {{#each cartProducts}}
+    <li>{{this.name}} x {{this.quantity}} = {{this.price}}€</li>
+  {{/each}}
+</ul>
+<p>Total: {{total}} €</p>
+
+<form action="/create-checkout-session" method="POST">
+  {{#each cartProducts}}
+    <input type="hidden" name="cartProducts[{{@index}}][name]" value="{{this.name}}">
+    <input type="hidden" name="cartProducts[{{@index}}][price]" value="{{this.price}}">
+    <input type="hidden" name="cartProducts[{{@index}}][quantity]" value="{{this.quantity}}">
+  {{/each}}
+  <button type="submit">Pay with card</button>
+</form>

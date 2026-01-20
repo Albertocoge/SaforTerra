@@ -1,0 +1,30 @@
+{{#if profile}}
+  <h1>My profile</h1>
+{{/if}}
+<div>
+  <div class="text-center">
+   <div class="card text-center shadow-lg" style="max-width: 400px; margin: 0 auto; border: none; background-color: #CABEA2;">
+  <div class="card-body">
+    <img class="rounded-circle mb-3" src="{{user.image}}" alt="User Profile Picture" style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #4A734C;">
+    <h2 class="card-title text-primary">{{user.username}}</h2>
+    <h5 class="card-subtitle text-muted mb-3">{{user.email}}</h5>
+    {{#if profile}}
+      <a href="/products/new" class="btn btn-success w-100">Create a new listing</a>
+    {{/if}}
+  </div>
+</div>
+
+    {{#if profile}}
+      <h2>My listings</h2>
+    {{else}}
+      <h2>Listings of this user</h2>
+    {{/if}}
+    <div class="row">
+      {{#each user.products as |product|}}
+        <div class="col-12 col-md-4">
+          {{> productCard product=product isProfile=../profile }}
+        </div>  
+      {{/each}}
+    </div>
+  </div>
+</div>

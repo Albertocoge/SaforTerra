@@ -1,0 +1,49 @@
+<div class="row">
+  <div class="col-12 col-md-7">
+    <div class="bg-light rounded overflow-hidden">
+      <img id="current-image" class="img-fluid" src="{{product.images.[0]}}" />
+    </div>
+    <!-- Updated: Added 'role="button"' and 'pointer' class -->
+    <div class="d-flex my-2 gap-3">
+      {{#each product.images as |image|}}
+        <img role="button" class="product-image pointer" src="{{image}}" alt="" height="50">
+      {{/each}}
+    </div>
+    <!-- Updated: Added d-flex gap-2 and category partial -->
+    <div class="d-flex gap-2">
+      {{#each product.categories}}
+        {{> category this}}
+      {{/each}}
+    </div>
+    <h1>{{product.name}}</h1>
+    <p><strong>Price:</strong> {{product.price}}€</p>
+    <p><strong>Description:</strong> {{product.description}}</p>
+    <p><strong>Unit:</strong> {{product.unit}}</p>
+    <!-- Categories and Subcategories -->
+    {{#each product.categories}}
+      <p><strong>Category:</strong> {{this.category}}</p>
+      {{#if this.subcategories.length}}
+        <p><strong>Subcategories:</strong> {{#each this.subcategories}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</p>
+      {{else}}
+        <p><strong>Subcategories:</strong> None</p>
+      {{/if}}
+    {{/each}}
+  </div>
+  <div class="col-12 col-md-5">
+  <div class="bg-secondary-subtle w-100 p-4 rounded">
+    <p>Listing of</p>
+    <a class="d-flex gap-2 my-2" href="/users/{{product.owner.id}}">
+      <img class="rounded-circle" src="{{product.owner.image}}" height="30" />
+      <p class="fw-bold">{{product.owner.username}}</p>
+    </a>
+    <form action="/cart/add" method="POST">
+      <input type="hidden" name="productId" value="{{product._id}}">
+      <button class="btn btn-primary w-100" type="submit">Add to Cart</button>
+    </form>
+  </div>
+</div>
+
+
+  </div>
+</div>
+<script src="/js/product-detail.js"></script>

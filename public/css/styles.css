@@ -1,0 +1,90 @@
+body {
+    background-color: #FDFCF7; /* Fondo suave, blanco cálido */
+    font-family: 'Open Sans', sans-serif; /* Una fuente sencilla y profesional */
+    color: #ffffff; /* Texto principal en verde oscuro */
+  }
+  
+  .navbar {
+    background-color: #467240 !important; /* Navbar con verde suave */
+  }
+  
+  .navbar-brand img {
+    filter: brightness(0.9);
+  }
+  
+  .nav-link,
+  .navbar-toggler-icon {
+    color: #FDFCF7 !important; 
+  }
+
+  .nav-link-strong {
+    font-weight: 500; 
+  }
+  
+  .navbar-nav .nav-link:hover {
+    background-color: #4A734C;
+    color: #FDFCF7 !important;
+    border-radius: 4px;
+    
+  }
+  
+  .btn-primary {
+    background-color: #4A734C;
+    border-color: #4A734C;
+  }
+  .btn-primary:hover {
+    background-color: #7F6A3B; 
+    border-color: #7F6A3B;
+  }
+  
+  .card {
+    background-color: #CABEA2; 
+    border: none;
+    border-radius: 8px;
+  }
+  .card .card-title {
+    color: #4A734C;
+  }
+  .card .card-text {
+    color: #4A734C;
+  }
+  .card-img-top {
+    border-bottom: 4px solid #4A734C;
+  }
+  
+  .form-label {
+    color: #000000;
+  }
+  
+  .form-control:focus {
+    border-color: #4A734C;
+    box-shadow: 0 0 0 0.2rem rgba(74,115,76,0.25);
+  }
+  
+  .btn-danger {
+    background-color: #7F6A3B;
+    border-color: #7F6A3B;
+  }
+  .btn-danger:hover {
+    background-color: #4A734C;
+    border-color: #4A734C;
+  }
+
+
+  .cart-table th {
+    background-color: #8EBF87;
+  }
+
+
+  body {
+    background-image: url('/imgs/background.png'); /* Ruta a la imagen */
+    background-size: cover; /* La imagen cubre todo el fondo */
+    background-position: center; /* Centra la imagen */
+    background-repeat: no-repeat; /* Evita que la imagen se repita */
+    background-color: rgba(0, 0, 0, 0.5); /* Color de fondo semitransparente */
+    background-blend-mode: overlay; /* Combina la imagen y el color */
+    background-attachment: fixed;
+  }
+  
+
+  
