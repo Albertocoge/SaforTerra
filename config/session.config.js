@@ -42,4 +42,3 @@ module.exports.getCurrentUser = async(req, res, next) => {
     next(error);
   }
 };
-}
