@@ -1,72 +1,92 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
-const EMAIL_PATTERN =
-  /^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
-const URL_PATTERN = /^(https?:\/\/)?([a-zA-Z0-9\-]+\.)+[a-zA-Z]{2,}(:\d+)?(\/[^\s]*)?$/
-const ROUNDS = 10
-const REQUIRED_FIELD = 'Campo requerido'
-const userSchema = new mongoose.Schema(
-  {
-    email: {
-      type: String,
-      required: [true, REQUIRED_FIELD],
-      unique: true,
-      match: [EMAIL_PATTERN, 'Email incorrecto'],
-      trim: true,
-      lowercase: true,
+const { DataTypes } = require("sequelize");
+const bcrypt = require("bcrypt");
+
+const ROUNDS = 10;
+
+module.exports = (sequelize) => {
+  const User = sequelize.define(
+    "User",
+    {
+      id: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+
+      email: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        unique: true,
+        validate: {
+          notEmpty: { msg: "Campo requerido" },
+          isEmail: { msg: "Email incorrecto" },
+        },
+        set(value) {
+          // trim + lowercase como en Mongoose
+          this.setDataValue("email", String(value).trim().toLowerCase());
+        },
+      },
+
+      password: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        validate: {
+          notEmpty: { msg: "Campo requerido" },
+          len: { args: [8, 255], msg: "La contraseña debe tener 8 o más caracteres" },
+        },
+      },
+
+      username: {
+        type: DataTypes.STRING(60),
+        allowNull: false,
+        unique: true,
+        validate: {
+          notEmpty: { msg: "Campo requerido" },
+        },
+      },
+
+      phone: {
+        type: DataTypes.STRING(30),
+        allowNull: false,
+        validate: {
+          notEmpty: { msg: "Campo requerido" },
+        },
+      },
+
+      image: {
+        type: DataTypes.STRING(2048),
+        allowNull: false,
+        validate: {
+          notEmpty: { msg: "Campo requerido" },
+          isUrl: { msg: "La imagen debe ser una URL válida" },
+        },
+      },
     },
-    password: {
-      type: String,
-      required: [true, REQUIRED_FIELD],
-      minLength: [8, "La contraseña debe tener 8 o más caracteres"],
-    },
-    username: {
-      type: String,
-      required: [true, REQUIRED_FIELD],
-      unique: true,
-    },
-    phone: {
-      type: String,
-      required: [true, REQUIRED_FIELD]
-    },
-    image: {
-      type: String,
-      required: [true, REQUIRED_FIELD],
-      match: [URL_PATTERN, 'La imagen debe ser una URL válida']
+    {
+      tableName: "users",
+      timestamps: true,
+      underscored: true, // created_at, updated_at, etc. (más limpio en SQL)
+      hooks: {
+        // Hash al crear
+        beforeCreate: async (user) => {
+          if (user.password) {
+            user.password = await bcrypt.hash(user.password, ROUNDS);
+          }
+        },
+        // Hash si se actualiza password
+        beforeUpdate: async (user) => {
+          if (user.changed("password")) {
+            user.password = await bcrypt.hash(user.password, ROUNDS);
+          }
+        },
+      },
     }
-  },
-  {
-    timestamps: true
-  }
-)
+  );
 
-// Creo un campo virtual para relacionar usuario con modelos y tener su array
-//Equivalente a Product.find({ owner: user.id })
-userSchema.virtual('products', {
-  foreignField: 'owner',
-  localField: '_id',
-  justOne: false,
-  ref: 'Product'
-})
+  // Método equivalente a userSchema.methods.checkPassword
+  User.prototype.checkPassword = function (password) {
+    return bcrypt.compare(password, this.password);
+  };
 
-
-// Evento que se produce antes de guardar un usuario en la BBDD
-// IMPORTANTE: Tiene que ir antes del mongoose.model() sino, no lo utiliza
-userSchema.pre("save", function (next) {
-  const user = this;
-  
-  // Antes de guardar, compruebo si tengo que hashear la contraseña, si su campo ha sido modificado o es nuevo
-  if (user.isModified("password")) {
-    bcrypt.hash(user.password, ROUNDS).then((hash) => {
-      user.password = hash;
-      next();
-    });
-  } else {
-    next();
-  }
-});
-userSchema.methods.checkPassword = function (password) {
-  return bcrypt.compare(password, this.password);
+  return User;
 };
-const User = mongoose.model('User', userSchema);
-module.exports = User
