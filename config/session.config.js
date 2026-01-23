@@ -28,17 +28,18 @@ module.exports.sessionConfig = expressSession({
 // Middleware: cargar usuario actual desde la sesión
 module.exports.getCurrentUser = async(req, res, next) => {
  try {
-  const userId = req.session.userId;
-  if (!userId) {
+    const userId = req.session.userId;
+    if (!userId) {
     return next();
-  const user = await User.findByPk(userId);
-  req.currentUser = user;
-  res.locals.currentUser = user;
+    }
+    const user = await User.findByPk(userId);
+    req.currentUser = user;
+    res.locals.currentUser = user;
 
 
 
-  return next();
-  } catch (error) {
+     return next();
+    } catch (error) {
     next(error);
   }
 };
