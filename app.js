@@ -1,6 +1,6 @@
 require('dotenv').config()
 // Connection to DB
-require('./config/db.config')
+
 require('./config/hbs.config')
 const express = require('express')
 const logger = require('morgan')
@@ -45,6 +45,11 @@ app.use((err, req, res, next) => {
   }
 });
 const PORT = process.env.PORT || 3000;
+const { sequelize } = require("./models");
+
+sequelize.authenticate()
+  .then(() => console.log("✅ Connected to MySQL via Sequelize"))
+  .catch(err => console.error("❌ MySQL connection error:", err));
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });

@@ -1,14 +1,15 @@
+const { Sequelize } = require("sequelize");
 
-const mongoose = require("mongoose");
+const sequelize = new Sequelize(
+  process.env.DB_NAME || "saforterra",
+  process.env.DB_USER || "root",
+  process.env.DB_PASSWORD || "",
+  {
+    host: process.env.DB_HOST || "127.0.0.1",
+    port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
+    dialect: "mysql",
+    logging: false,
+  }
+);
 
-const DB_NAME = 'farm2fork'
-const MONGO_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017";
-const CONNECTION_URI = `${MONGO_URI}/${DB_NAME}`
-mongoose
-  .connect(CONNECTION_URI)
-  .then((x) => {
-    console.log(`Connected to Mongo! Database name: "${x.connections[0].name}"`);
-  })
-  .catch((err) => {
-    console.error("Error connecting to mongo: ", err);
-  });
+module.exports = sequelize;
