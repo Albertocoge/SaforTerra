@@ -2,7 +2,7 @@ const expressSession = require("express-session");
 const SequelizeStore = require("connect-session-sequelize")(expressSession.Store);
 
 const sequelize = require("./db.config");
-const User = require("../models/User.model");
+const {User} = require("../models");
 const MAX_AGE_DAYS = 7;
 
 //Store de sesiones en MySQL

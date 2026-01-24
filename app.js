@@ -1,4 +1,5 @@
 require('dotenv').config()
+
 // Connection to DB
 
 require('./config/hbs.config')

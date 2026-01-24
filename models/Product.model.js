@@ -1,55 +1,51 @@
-const mongoose = require('mongoose');
-const CATEGORIES = require('../data/categories');
-const REQUIRED_FIELD = 'Campo requerido';
-// Extract category names from CATEGORIES
-const categoryNames = CATEGORIES.map((categoryObj) => categoryObj.category);
-const productSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: [true, REQUIRED_FIELD],
-    },
-    description: {
-      type: String,
-      required: [true, REQUIRED_FIELD],
-    },
-    owner: {
-      type: mongoose.Schema.Types.ObjectId,
-      required: [true, REQUIRED_FIELD],
-      ref: 'User',
-    },
-    price: {
-      type: Number,
-      required: [true, REQUIRED_FIELD],
-    },
-    images: {
-      type: [String],
-      required: [true, REQUIRED_FIELD],
-    },
-    unit: {
-      type: String,
-      required: [true, REQUIRED_FIELD],
-      enum: ['Kilograms', 'Liters', 'Units', 'Others'],
-      default: 'Units',
-    },
-    categories: [
-      {
-        category: {
-          type: String,
-          enum: CATEGORIES.map(category => category.value), // Use the array of category names for validation
-          required: [true, REQUIRED_FIELD],
-        },
-        subcategories: {
-          type: [String], // Array of strings for subcategories
-          default: [], // Default to an empty array
-          required :[true ,REQUIRED_FIELD]
-        },
+// models/Product.model.js
+const { DataTypes } = require("sequelize");
+
+module.exports = (sequelize) => {
+  const Product = sequelize.define(
+    "Product",
+    {
+      id: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        autoIncrement: true,
+        primaryKey: true,
       },
-    ],
-  },
-  {
-    timestamps: true,
-  }
-);
-const Product = mongoose.model('Product', productSchema);
-module.exports = Product;
+
+      name: { type: DataTypes.STRING(120), allowNull: false },
+      description: { type: DataTypes.TEXT, allowNull: false },
+
+      ownerId: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        allowNull: false,
+        field: "owner_id",
+      },
+
+      price: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+
+      images: {
+        type: DataTypes.JSON, // array de strings
+        allowNull: false,
+        defaultValue: [],
+      },
+
+      unit: {
+        type: DataTypes.ENUM("Kilograms", "Liters", "Units", "Others"),
+        allowNull: false,
+        defaultValue: "Units",
+      },
+
+      categories: {
+        type: DataTypes.JSON, // [{category, subcategories:[]}]
+        allowNull: false,
+        defaultValue: [],
+      },
+    },
+    {
+      tableName: "products",
+      timestamps: true,
+      underscored: true,
+    }
+  );
+
+  return Product;
+};
