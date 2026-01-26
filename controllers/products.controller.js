@@ -1,56 +1,73 @@
-// Hemos cambiado CATEGORIES POR categories, si no , no aparecía como definida en la línea 9
+const { Product, User } = require("../models");
+const CATEGORIES = require("../data/categories");
+const { Op } = require("sequelize");
 
-const Product = require('../models/Product.model')
-const CATEGORIES = require('../data/categories')
-const mongoose = require('mongoose')
+module.exports.list = async (req, res, next) => {
+  try {
+    const { category } = req.query;
 
-module.exports.list = (req, res, next) => {
+    const where = {};
+    if (category) {
+      // categories es JSON -> quick filter: buscar el texto dentro del JSON
+      // (Para algo más fino luego se hace con JSON_CONTAINS o un diseño relacional)
+      where.categories = { [Op.like]: `%${category}%` };
+    }
 
-  const { category } = req.query
-  const query = {}
-  if (category) {
-    query.categories = { $in: category }
+    const products = await Product.findAll({
+      where,
+      order: [["created_at", "DESC"]],
+    });
+
+    res.render("products/list", { products, categories: CATEGORIES });
+  } catch (err) {
+    next(err);
   }
-  Product.find(query)
-  .then(products => {
-    res.render('products/list', { products, categories: CATEGORIES})
-  })
-  .catch(err => next(err))
-}
-module.exports.getDetail = (req, res, next) => {
-  const { id } = req.params
-  Product.findById(id)
-    .populate('owner')
-    .then(product => {
-      if (!product) {
-        return next({ status: 404, message: 'Product not found' })
-      }
-      res.render('products/detail', { product })
-    })
-    .catch(error => next(error))
-}
-module.exports.create = (req, res, next) => {
-  res.render('products/form', { categories: CATEGORIES })
-}
-module.exports.doCreate = (req, res, next) => {
-  req.body.owner = req.currentUser.id
-  if (req.files) {
-    req.body.images = req.files.map(file => file.path)
+};
+
+module.exports.getDetail = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const product = await Product.findByPk(id, {
+      include: [{ model: User, as: "owner" }],
+    });
+
+    if (!product) return next({ status: 404, message: "Product not found" });
+
+    res.render("products/detail", { product });
+  } catch (err) {
+    next(err);
   }
-  Product.create(req.body)
-    .then((productCreated) => {
-      res.redirect(`/products/${productCreated.id}`)
-    })
-    .catch(err => {
-      if (err instanceof mongoose.Error.ValidationError) {
-       next(err )
-      } else {
-        next(err)
-      }
-    })
-}
-module.exports.delete = (req, res, next) => {
-  Product.findByIdAndDelete(req.params.id)
-    .then(() => res.redirect('/products'))
-    .catch(err => next(err))
-}
+};
+
+module.exports.create = (req, res) => {
+  res.render("products/form", { categories: CATEGORIES });
+};
+
+module.exports.doCreate = async (req, res, next) => {
+  try {
+    const payload = { ...req.body };
+
+    // En SQL: ownerId (no owner)
+    payload.ownerId = req.currentUser.id;
+
+    if (req.files) {
+      payload.images = req.files.map((file) => file.path); // tu model guarda JSON array
+    }
+
+    const productCreated = await Product.create(payload);
+    res.redirect(`/products/${productCreated.id}`);
+  } catch (err) {
+    // Sequelize validation errors (si quieres pintarlas en el form luego)
+    next(err);
+  }
+};
+
+module.exports.delete = async (req, res, next) => {
+  try {
+    await Product.destroy({ where: { id: req.params.id } });
+    res.redirect("/products");
+  } catch (err) {
+    next(err);
+  }
+};
