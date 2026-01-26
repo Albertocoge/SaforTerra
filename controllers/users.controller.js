@@ -1,58 +1,72 @@
-const mongoose = require('mongoose')
-const User = require('../models/User.model')
-const Product = require('../models/Product.model')
-module.exports.create = (req, res, next) => {
-  res.render('users/register')
-}
-module.exports.doCreate = (req, res, next) => {
-  // Mi modelo requiere los campos que vienen el req.body, pero image lo ha procesado multer
-  // Necesito mandar en el create los campos de req.body y el campo image con la url que subi a cloudinary que esta en req.file.path
-  const fields = {
-    ...req.body,
-    image: req.file.path
-  }
-  // O añadir el key value image a req.body del tiron
-  // req.body.image = req.file.path
-  User.create(fields)
-    .then(() => {
-      res.redirect('/')
-    })
-    .catch(error => {
-      // Para autorellenar el formulario cuando haya errores, pasamos todos los valores del req.body, menos la password
-      const values = {...req.body}
-      delete values.password
-      if (error instanceof mongoose.Error.ValidationError) {
-        res.render('users/register', {
-          errors: error.errors,
-          values
-        })
-      } else if (error.code && error.code === 11000) {
-        const errors = {}
-        if (error.keyValue.email) {
-          errors.email = 'Ya existe un usuario con este email'
-        }
-        if (error.keyValue.username) {
-          errors.username = 'Ya existe un usuario con este nombre'
-        }
-        res.render('users/register', { errors, values })
-      } else {
-        next(error)
+const { User, Product } = require("../models");
+
+module.exports.create = (req, res) => {
+  res.render("users/register");
+};
+
+module.exports.doCreate = async (req, res, next) => {
+  try {
+    const fields = {
+      ...req.body,
+      image: req.file?.path, // ojo: si no hay file, esto sería undefined
+    };
+
+    await User.create(fields);
+    res.redirect("/");
+  } catch (error) {
+    const values = { ...req.body };
+    delete values.password;
+
+    // Duplicados / unique
+    if (error?.name === "SequelizeUniqueConstraintError") {
+      const errors = {};
+      for (const item of error.errors) {
+        if (item.path === "email") errors.email = "Ya existe un usuario con este email";
+        if (item.path === "username") errors.username = "Ya existe un usuario con este nombre";
       }
-    })
-}
-module.exports.getCurrentUserProfile = (req, res, next) => {
-  Product.find({ owner: req.currentUser.id })
-    .then((products) => {
-      req.currentUser.products = products
-      res.render('users/userProfile', { user: req.currentUser, profile: true })
-    })
-    .catch(err => next(err))
-}
-module.exports.getUserProfile = (req, res, next) => {
-  User.findById(req.params.id)
-    .populate('products')
-    .then(user => {
-      res.render('users/userProfile', { user })
-    })
-    .catch(err => next(err))
-}
+      return res.render("users/register", { errors, values });
+    }
+
+    // Validaciones
+    if (error?.name === "SequelizeValidationError") {
+      const errors = {};
+      for (const item of error.errors) {
+        errors[item.path] = item.message;
+      }
+      return res.render("users/register", { errors, values });
+    }
+
+    next(error);
+  }
+};
+
+module.exports.getCurrentUserProfile = async (req, res, next) => {
+  try {
+    const products = await Product.findAll({
+      where: { ownerId: req.currentUser.id },
+      order: [["created_at", "DESC"]],
+    });
+
+    // igual que hacías antes: añadirle products al objeto de usuario para la vista
+    const user = req.currentUser.toJSON ? req.currentUser.toJSON() : req.currentUser;
+    user.products = products;
+
+    res.render("users/userProfile", { user, profile: true });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports.getUserProfile = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.params.id, {
+      include: [{ model: Product, as: "products" }],
+    });
+
+    if (!user) return next({ status: 404, message: "User not found" });
+
+    res.render("users/userProfile", { user });
+  } catch (err) {
+    next(err);
+  }
+};
