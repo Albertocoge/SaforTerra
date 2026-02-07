@@ -1,47 +1,60 @@
-const Cart = require('../models/Cart.model');
-const Product = require('../models/Product.model');
+const { Cart, CartItem, Product } = require("../models");
 
-// Añadir un producto al carrito
-exports.addToCart = async (req, res, next) => {
+// Helper: obtener o crear carrito del usuario (1:1)
+async function getOrCreateCart(userId) {
+  let cart = await Cart.findOne({ where: { userId } });
+  if (!cart) cart = await Cart.create({ userId });
+  return cart;
+}
+
+// Ver el carrito
+exports.getCart = async (req, res, next) => {
   try {
-    const { productId } = req.body;
-    const userId = req.currentUser._id; // Asume que el usuario está autenticado
+    const userId = req.currentUser.id; // Sequelize -> id (no _id)
 
-    
+    const cart = await Cart.findOne({
+      where: { userId },
+      include: [
+        {
+          model: CartItem,
+          as: "items",
+          include: [{ model: Product, as: "product" }],
+        },
+      ],
+    });
 
-    // Buscar o crear el carrito del usuario
-    let cart = await Cart.findOne({ user: userId });
-    if (!cart) {
-      cart = new Cart({ user: userId, products: [] });
-    }
+    // Para que la vista no pete si no hay carrito aún:
+    const safeCart = cart || { items: [] };
 
-    // Buscar si el producto ya está en el carrito
-    const existingProductIndex = cart.products.findIndex(p =>
-      p.product.equals(productId)
-    );
-
-    if (existingProductIndex >= 0) {
-      // Incrementar la cantidad si ya existe
-      cart.products[existingProductIndex].quantity += 1;
-    } else {
-      // Añadir un nuevo producto al carrito
-      cart.products.push({ product: productId, quantity: 1 });
-    }
-
-    await cart.save();
-    res.redirect('/cart'); // Redirige a la vista del carrito
+    res.render("cart/cart", { cart: safeCart });
   } catch (error) {
     next(error);
   }
 };
 
-// Ver el carrito
-exports.getCart = async (req, res, next) => {
+// Añadir un producto al carrito
+exports.addToCart = async (req, res, next) => {
   try {
-    const userId = req.currentUser._id;
-    const cart = await Cart.findOne({ user: userId }).populate('products.product');
+    const { productId } = req.body;
+    const userId = req.currentUser.id;
 
-    res.render('cart/cart', { cart });
+    // Aseguramos que el producto existe
+    const product = await Product.findByPk(productId);
+    if (!product) return next({ status: 404, message: "Product not found" });
+
+    const cart = await getOrCreateCart(userId);
+
+    // Si ya existe item (cartId + productId) -> incrementa quantity
+    const [item, created] = await CartItem.findOrCreate({
+      where: { cartId: cart.id, productId: product.id },
+      defaults: { quantity: 1 },
+    });
+
+    if (!created) {
+      await item.increment("quantity", { by: 1 });
+    }
+
+    res.redirect("/cart");
   } catch (error) {
     next(error);
   }
@@ -51,43 +64,51 @@ exports.getCart = async (req, res, next) => {
 exports.removeFromCart = async (req, res, next) => {
   try {
     const { productId } = req.params;
-    const userId = req.currentUser._id;
+    const userId = req.currentUser.id;
 
-    const cart = await Cart.findOne({ user: userId });
-    if (cart) {
-      cart.products = cart.products.filter(p => !p.product.equals(productId));
-      await cart.save();
-    }
+    const cart = await Cart.findOne({ where: { userId } });
+    if (!cart) return res.redirect("/cart");
 
-    res.redirect('/cart');
+    await CartItem.destroy({
+      where: { cartId: cart.id, productId: Number(productId) },
+    });
+
+    res.redirect("/cart");
   } catch (error) {
     next(error);
   }
 };
-
 
 exports.checkout = async (req, res, next) => {
   try {
-    const userId = req.currentUser._id;
-    const cart = await Cart.findOne({ user: userId }).populate('products.product');
+    const userId = req.currentUser.id;
 
-    if (!cart || cart.products.length === 0) {
-      return res.redirect('/cart'); // Si el carrito está vacío, redirige
-    }
+    const cart = await Cart.findOne({
+      where: { userId },
+      include: [
+        {
+          model: CartItem,
+          as: "items",
+          include: [{ model: Product, as: "product" }],
+        },
+      ],
+    });
 
-    // Preparar datos del carrito para Stripe
-    const cartProducts = cart.products.map(item => ({
+    if (!cart || cart.items.length === 0) return res.redirect("/cart");
+
+    const cartProducts = cart.items.map((item) => ({
       name: item.product.name,
-      price: item.product.price,
+      price: Number(item.product.price),
       quantity: item.quantity,
     }));
 
-    // Calcular total (opcional, se puede hacer en front o directamente en el back)
-    const total = cartProducts.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    const total = cartProducts.reduce(
+      (acc, item) => acc + item.price * item.quantity,
+      0
+    );
 
-    res.render('payment/checkout', { cartProducts, total });
+    res.render("payment/checkout", { cartProducts, total });
   } catch (error) {
     next(error);
   }
 };
-

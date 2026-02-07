@@ -46,13 +46,24 @@ app.use((err, req, res, next) => {
   }
 });
 const PORT = process.env.PORT || 3000;
+
 const { sequelize } = require("./models");
 
-sequelize.authenticate()
-  .then(() => console.log("✅ Connected to MySQL via Sequelize"))
-  .catch(err => console.error("❌ MySQL connection error:", err));
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+sequelize
+  .authenticate()
+  .then(() => {
+    console.log("✅ Connected to MySQL via Sequelize");
+    return sequelize.sync(); // crea tablas si no existen
+  })
+  .then(() => {
+    console.log("✅ Tables synced");
+    app.listen(PORT, () => {
+      console.log(`Server listening on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+  console.error("❌ DB init error:", err);
+  process.exit(1);
 });
 
 const hbs = require('hbs'); // O handlebars si usas express-handlebars

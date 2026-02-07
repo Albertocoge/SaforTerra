@@ -35,8 +35,8 @@ module.exports = (sequelize) => {
       timestamps: true,
       underscored: true,
       indexes: [
-        { unique: true, fields: ["cart_id", "product_id"] }, // evita duplicados del mismo producto en el carrito
-      ],
+  { unique: true, fields: ["cartId", "productId"] },
+  ],
     }
   );
 

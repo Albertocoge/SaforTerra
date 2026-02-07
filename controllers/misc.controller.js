@@ -4,11 +4,11 @@
 
   */
  
- const Product = require('../models/Product.model');
+ const { Product } = require('../models');
 module.exports.getHome = async (req, res, next) => {
   try {
     // Recuperar todos los productos de la base de datos
-    const products = await Product.find();
+    const products = await Product.findAll();
     // Renderizar la vista 'home' pasando los productos
     res.render('home', { products });
   } catch (error) {
